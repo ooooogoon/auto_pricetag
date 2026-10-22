@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>A4 대형 가격표 2x4 자동 인쇄기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Noto+Sans+KR:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}body{background-color:#f1f3f5;font-family:'Noto Sans KR',sans-serif;color:#111}
+    .no-print{background:#ffffff;padding:18px 24px;max-width:1220px;margin:18px auto;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,0.08);position:relative}
+    .app-sys-ver{display:inline-block;font-family:monospace;font-size:11px;font-weight:700;color:#868e96;background:#f8f9fa;padding:3px 8px;border-radius:4px;border:1px solid #e9ecef;margin-bottom:8px;letter-spacing:0.5px}
+    .header-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:2px solid #e9ecef;padding-bottom:12px}
+    .header-bar h1{font-size:22px;font-weight:900}
+    .save-indicator{font-size:13px;font-weight:700;color:#2b8a3e;background:#ebfbee;padding:4px 10px;border-radius:20px;border:1px solid #b2f2bb;display:flex;align-items:center;gap:5px}
+    .btn-group{display:flex;gap:10px}button{padding:9px 16px;font-size:14px;font-weight:800;border:none;border-radius:6px;cursor:pointer;transition:all 0.2s}
+    .btn-print{background:#1971c2;color:#ffffff;font-size:16px;box-shadow:0 2px 8px rgba(25,113,194,0.35)}.btn-print:hover{background:#1864ab}
+    .btn-add{background:#2f9e44;color:#ffffff}.btn-add:hover{background:#2b8a3e}
+    .btn-paste-modal{background:#7048e8;color:#ffffff}.btn-paste-modal:hover{background:#5f3dc4}
+    .btn-sample-reset{background:#e03131;color:#ffffff}.btn-sample-reset:hover{background:#c92a2a}
+    .bulk-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#f3f0ff;border:1.5px solid #d0bfff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:14px;font-weight:700}
+    .bulk-bar input[type="number"]{width:75px;padding:6px 8px;font-weight:800;text-align:center}
+    .btn-bulk-add{background:#845ef7;color:white}.btn-bulk-add:hover{background:#7048e8}
+    .theme-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:#fff4e6;border:1.5px solid #ffd8a8;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:14px;font-weight:700}
+    .theme-toolbar select{width:auto;padding:6px 10px;font-weight:800}
+    .batch-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#e7f5ff;border:1px solid #a5d8ff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:14px;font-weight:700}
+    .batch-bar select{width:auto;padding:6px 10px;font-weight:700}
+    .btn-batch-all{background:#228be6;color:white}.btn-batch-all:hover{background:#1c7ed6}
+    .btn-batch-sel{background:#339af0;color:white}.btn-batch-sel:hover{background:#228be6}
+    .size-controllers{display:flex;flex-wrap:wrap;gap:20px;background:#f8f9fa;padding:12px 18px;border-radius:8px;margin-bottom:15px;align-items:center;border:1px solid #e9ecef}
+    .controller-item{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700}.controller-item input[type="range"]{cursor:pointer;width:100px}
+    .input-table-wrap{max-height:320px;overflow-y:auto;border:1px solid #dee2e6;border-radius:6px;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #e9ecef;padding:6px 8px;text-align:center}
+    th{background:#f1f3f5;position:sticky;top:0;z-index:1;font-weight:800}
+    input,select{width:100%;padding:6px 8px;border:1px solid #ced4da;border-radius:4px;font-size:14px;font-weight:600}
+    input:focus,select:focus{outline:2px solid #339af0;border-color:transparent}
+    input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+    input:disabled{background-color:#e9ecef;cursor:not-allowed;border-color:#dee2e6;color:#adb5bd}
+    .btn-del{background:#fa5252;color:white;padding:4px 8px;font-size:12px;border-radius:4px}
+    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center}
+    .modal-content{background:#ffffff;padding:24px;width:90%;max-width:680px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+    .modal-content textarea{width:100%;height:220px;padding:12px;border:1.5px solid #ced4da;border-radius:6px;font-family:monospace;font-size:13px;margin:12px 0;box-sizing:border-box;resize:vertical}
+    .print-area{display:flex;flex-direction:column;align-items:center;gap:35px;margin-bottom:60px}
+    .page-a4{width:210mm;height:297mm;padding:5mm;background:#ffffff;box-shadow:0 5px 25px rgba(0,0,0,0.18);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);border:2px solid #000}
+    .card{border:2px solid #000000;padding:6px 12px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;background:#ffffff;overflow:hidden}
+    .card-badge-wrap{display:flex;justify-content:center;align-items:center;width:100%;margin-top:2px}
+    .card-badge{font-family:'Do Hyeon','Noto Sans KR',sans-serif;font-size:var(--badge-font-size,28px);letter-spacing:-0.5px;line-height:1.15;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:2px 14px;border-radius:30px;transition:all 0.2s}
+
+    .badge-style-pop.badge-type-discount{
+      background: #ffe066 !important;
+      color: #000000 !important;
+      border: 2.5px solid #d90429 !important;
+      box-shadow: 2px 2px 0px #d90429 !important;
+      font-weight: 900 !important;
+    }
+    .badge-style-pop.badge-type-nplusone{
+      background: #cbf3f0 !important;
+      color: #000000 !important;
+      border: 2.5px solid #0b7285 !important;
+      box-shadow: 2px 2px 0px #0b7285 !important;
+      font-weight: 900 !important;
+    }
+
+    .badge-style-outline{background:#ffffff;color:#000000;border:2.5px solid #000000;box-shadow:2px 2px 0px #000000}
+    .badge-style-clean{background:transparent;color:#000000;border:none;padding:0}
+    .card-name{font-family:'Black Han Sans','Noto Sans KR',sans-serif;font-size:var(--name-font-size,38px);line-height:1.1;color:#000000;word-break:break-all;letter-spacing:-0.5px;margin:auto 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;white-space:pre-line}
+    .card-price-wrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:100%;margin-bottom:2px}
+    .card-orig-price{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:3px}
+    .orig-label{font-family:'Do Hyeon',sans-serif;font-size:calc(var(--orig-font-size,28px)*0.7);color:#333333;background:#f1f3f5;padding:1px 6px;border-radius:4px;border:1px solid #adb5bd;line-height:1.1;letter-spacing:-0.5px}
+    .orig-amount{font-family:'Black Han Sans',sans-serif;font-size:var(--orig-font-size,28px);color:#1a1a1a;text-decoration:line-through 2.5px #e03131;line-height:1;letter-spacing:-0.5px}
+    .card-sale-price{font-family:'Black Han Sans','Noto Sans KR',sans-serif;font-size:var(--sale-font-size,62px);line-height:0.95;color:#000000;letter-spacing:-2px;white-space:nowrap}
+
+    @media print{
+      *{
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      body{background:transparent}
+      .no-print{display:none!important}
+      .modal-overlay{display:none!important}
+      .print-area{gap:0;margin:0}
+      .page-a4{box-shadow:none;margin:0;page-break-after:always;break-after:page;border:none;width:210mm;height:297mm;padding:4mm}
+      .card{border:2px solid #000000}
+      @page{size:A4 portrait;margin:0}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print">
+    <div class="app-sys-ver">version.korea7_oy_261018</div>
+
+    <div class="header-bar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <h1>🏷️ A4 가격표 2x4 대형 자동 인쇄기</h1>
+        <div class="save-indicator" id="saveIndicator">
+          <span>●</span> 실시간 자동저장 켜짐
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn-add" onclick="_K7Engine.addRow()">+ 1개 추가</button>
+        <button class="btn-paste-modal" onclick="_K7Engine.openPasteModal()">📋 엑셀/시트 대량 붙여넣기</button>
+        <button class="btn-sample-reset" onclick="_K7Engine.resetToPreset()">🔄 A/B/C/D 샘플 초기화</button>
+        <button class="btn-print" onclick="window.print()">🖨️ A4 바로 인쇄</button>
+      </div>
+    </div>
+
+    <div class="bulk-bar">
+      <span>⚡ <b>빈 행 대량 추가:</b></span>
+      <input type="number" id="bulkAddCount" value="8" min="1" max="500">
+      <button class="btn-bulk-add" onclick="_K7Engine.addBulkRows()">개 빈 줄 일괄 추가</button>
+      <button style="background:#5c7cfa; color:white; padding:6px 10px;" onclick="_K7Engine.addExactPages(1)">+ A4 1장(8개)</button>
+      <button style="background:#4263eb; color:white; padding:6px 10px;" onclick="_K7Engine.addExactPages(2)">+ A4 2장(16개)</button>
+      <button style="background:#3b5bdb; color:white; padding:6px 10px;" onclick="_K7Engine.addExactPages(5)">+ A4 5장(40개)</button>
+      <span style="color:#7048e8; font-size:13px; margin-left:auto;">현재 총 <b id="totalItemCount">0</b>개 상품 (<span id="totalPageCount">0</span>장 분량)</span>
+    </div>
+
+    <div class="theme-toolbar">
+      <span>✨ <b>이모티콘 테마:</b></span>
+      <select id="emojiThemeSelect" onchange="_K7Engine.saveSettings(); _K7Engine.renderPages();">
+        <option value="mart" selected>🔥💥 [불꽃/폭탄] 마트 폭풍세일</option>
+        <option value="lightning">⚡🌪️ [번개/돌풍] 초특가 스피드</option>
+        <option value="king">👑💎 [왕관/보석] 프리미엄 대박찬스</option>
+        <option value="party">🎉🎁 [파티/선물] 득템 덤 페스티벌</option>
+        <option value="alert">🚨📢 [긴급/경보] 파격처분 특가</option>
+      </select>
+
+      <span style="margin-left: 15px;">🎨 <b>배지 라벨 스타일:</b></span>
+      <select id="badgeStyleSelect" onchange="_K7Engine.saveSettings(); _K7Engine.renderPages();">
+        <option value="pop" selected>🔥 화려한 컬러 POP 스티커</option>
+        <option value="outline">🏷️ 깔끔 볼드 알약 테두리</option>
+        <option value="clean">📄 심플 텍스트</option>
+      </select>
+    </div>
+
+    <div class="batch-bar">
+      <span>⚡ <b>구분 일괄 변경:</b></span>
+      <select id="batchTypeSelect">
+        <option value="원가할인">원가 할인</option>
+        <option value="할인">할인</option>
+        <option value="1+1">1+1 행사</option>
+        <option value="2+1">2+1 행사</option>
+      </select>
+      <button class="btn-batch-all" onclick="_K7Engine.applyBatchType(true)">전체 상품 일괄 변경</button>
+      <button class="btn-batch-sel" onclick="_K7Engine.applyBatchType(false)">선택한 항목만 변경</button>
+    </div>
+
+    <div class="size-controllers">
+      <div class="controller-item">
+        <label>🏷️ 구분 배지:</label>
+        <input type="range" id="badgeSizeSlider" min="20" max="38" value="28" oninput="_K7Engine.applyFontSizes(); _K7Engine.saveSettings();">
+        <span id="badgeSizeVal">28px</span>
+      </div>
+      <div class="controller-item">
+        <label>📦 <b>상품명:</b></label>
+        <input type="range" id="nameSizeSlider" min="28" max="52" value="38" oninput="_K7Engine.applyFontSizes(); _K7Engine.saveSettings();">
+        <span id="nameSizeVal">38px</span>
+      </div>
+      <div class="controller-item">
+        <label>❌ <b>정상가(취소선):</b></label>
+        <input type="range" id="origSizeSlider" min="18" max="42" value="28" oninput="_K7Engine.applyFontSizes(); _K7Engine.saveSettings();">
+        <span id="origSizeVal">28px</span>
+      </div>
+      <div class="controller-item">
+        <label>💰 <b>최종 판매가:</b></label>
+        <input type="range" id="saleSizeSlider" min="44" max="78" value="62" oninput="_K7Engine.applyFontSizes(); _K7Engine.saveSettings();">
+        <span id="saleSizeVal">62px</span>
+      </div>
+    </div>
+
+    <div class="input-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;"><input type="checkbox" id="checkAll" onchange="_K7Engine.toggleSelectAll(this.checked)"></th>
+            <th style="width: 50px;">번호</th>
+            <th style="width: 130px;">구분</th>
+            <th>상품명</th>
+            <th style="width: 160px;">정상가 (원래 가격)</th>
+            <th style="width: 160px;">최종 판매가 (할인가 / 행사가)</th>
+            <th style="width: 65px;">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="inputBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="pasteModal">
+    <div class="modal-content">
+      <h2 style="font-size:18px; margin-bottom:8px;">📋 엑셀 / 구글 시트 대량 붙여넣기</h2>
+      <p style="font-size:13px; color:#666; line-height:1.4;">
+        엑셀이나 구글 시트에서 복사한 내용을 붙여넣으세요.<br>
+        • [상품명] 열 하나만 복사한 경우: 상품명만 순서대로 추가됩니다.<br>
+        • [상품명 - 정상가 - 판매가] 여러 열을 복사한 경우: 각 칸에 맞게 자동 정렬됩니다.
+      </p>
+      <textarea id="bulkPasteText" placeholder="여기에 복사한 엑셀 데이터를 붙여넣기(Ctrl+V) 하세요..."></textarea>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label style="font-size:13px; font-weight:bold; cursor:pointer;">
+          <input type="checkbox" id="bulkOverwrite" checked style="width:auto; margin-right:4px;"> 기존 목록 지우고 새로 채우기
+        </label>
+        <div style="display:flex; gap:8px;">
+          <button style="background:#868e96; color:white;" onclick="_K7Engine.closePasteModal()">취소</button>
+          <button style="background:#228be6; color:white;" onclick="_K7Engine.processBulkPaste()">즉시 반영하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-area" id="printArea"></div>
+
+  <script>
+    const _K7Engine = (function(){
+      const _0xKEY_DATA = "_korea7_data_store_v3";
+      const _0xKEY_CFG = "_korea7_cfg_store_v3";
+
+      function _getPreset(){
+        return [
+          { checked: false, type: '원가할인', name: '발렌타인17년\n700ML', orig: 145000, sale: 122200 },
+          { checked: false, type: '할인', name: 'L와인까버네쇼\n비뇽750ml', orig: 8900, sale: 6000 },
+          { checked: false, type: '1+1', name: '캠핑토치라이터', orig: null, sale: 4700 },
+          { checked: false, type: '2+1', name: '허니바나나맛\nHBM칩스', orig: null, sale: 1500 },
+          { checked: false, type: '원가할인', name: '', orig: null, sale: null },
+          { checked: false, type: '원가할인', name: '', orig: null, sale: null },
+          { checked: false, type: '원가할인', name: '', orig: null, sale: null },
+          { checked: false, type: '원가할인', name: '', orig: null, sale: null }
+        ];
+      }
+
+      let _items = (function(){
+        try {
+          const raw = localStorage.getItem(_0xKEY_DATA);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch(e) {}
+        return _getPreset();
+      })();
+
+      function _saveData(){
+        try {
+          localStorage.setItem(_0xKEY_DATA, JSON.stringify(_items));
+          const ind = document.getElementById('saveIndicator');
+          if (ind) {
+            ind.style.color = '#2b8a3e';
+            ind.innerHTML = '<span>●</span> 실시간 자동저장 완료';
+          }
+        } catch(e) {}
+      }
+
+      function _saveConfig(){
+        try {
+          const cfg = {
+            theme: document.getElementById('emojiThemeSelect').value,
+            style: document.getElementById('badgeStyleSelect').value,
+            badgeSize: document.getElementById('badgeSizeSlider').value,
+            nameSize: document.getElementById('nameSizeSlider').value,
+            origSize: document.getElementById('origSizeSlider').value,
+            saleSize: document.getElementById('saleSizeSlider').value
+          };
+          localStorage.setItem(_0xKEY_CFG, JSON.stringify(cfg));
+        } catch(e) {}
+      }
+
+      function _loadConfig(){
+        try {
+          const raw = localStorage.getItem(_0xKEY_CFG);
+          if (raw) {
+            const s = JSON.parse(raw);
+            if (s.theme) document.getElementById('emojiThemeSelect').value = s.theme;
+            if (s.style) document.getElementById('badgeStyleSelect').value = s.style;
+            if (s.badgeSize) document.getElementById('badgeSizeSlider').value = s.badgeSize;
+            if (s.nameSize) document.getElementById('nameSizeSlider').value = s.nameSize;
+            if (s.origSize) document.getElementById('origSizeSlider').value = s.origSize;
+            if (s.saleSize) document.getElementById('saleSizeSlider').value = s.saleSize;
+          }
+        } catch(e) {}
+      }
+
+      function _applyFonts(){
+        const b = document.getElementById('badgeSizeSlider').value;
+        const n = document.getElementById('nameSizeSlider').value;
+        const o = document.getElementById('origSizeSlider').value;
+        const s = document.getElementById('saleSizeSlider').value;
+        document.getElementById('badgeSizeVal').innerText = b + 'px';
+        document.getElementById('nameSizeVal').innerText = n + 'px';
+        document.getElementById('origSizeVal').innerText = o + 'px';
+        document.getElementById('saleSizeVal').innerText = s + 'px';
+        document.documentElement.style.setProperty('--badge-font-size', b + 'px');
+        document.documentElement.style.setProperty('--name-font-size', n + 'px');
+        document.documentElement.style.setProperty('--orig-font-size', o + 'px');
+        document.documentElement.style.setProperty('--sale-font-size', s + 'px');
+      }
+
+      function _renderTable(){
+        const tbody = document.getElementById('inputBody');
+        tbody.innerHTML = '';
+        _items.forEach((item, idx) => {
+          const isN = (item.type === '1+1' || item.type === '2+1');
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input type="checkbox" ${item.checked ? 'checked' : ''} onchange="_K7Engine._onChk(${idx}, this.checked)"></td>
+            <td>${idx + 1}</td>
+            <td>
+              <select data-row="${idx}" data-col="type" onchange="_K7Engine._onTyp(${idx}, this.value)" onkeydown="_K7Engine._onKey(event, ${idx}, 'type')">
+                <option value="원가할인" ${item.type === '원가할인' ? 'selected' : ''}>원가 할인</option>
+                <option value="할인" ${item.type === '할인' ? 'selected' : ''}>할인</option>
+                <option value="1+1" ${item.type === '1+1' ? 'selected' : ''}>1+1</option>
+                <option value="2+1" ${item.type === '2+1' ? 'selected' : ''}>2+1</option>
+              </select>
+            </td>
+            <td><input type="text" data-row="${idx}" data-col="name" value="${(item.name || '').replace(/\n/g, ' ')}" oninput="_K7Engine._onUpd(${idx}, 'name', this.value)" onkeydown="_K7Engine._onKey(event, ${idx}, 'name')" onpaste="_K7Engine._onPst(event, ${idx}, 'name')" placeholder="상품명"></td>
+            <td><input type="number" data-row="${idx}" data-col="orig" value="${isN ? '' : (item.orig || '')}" ${isN ? 'disabled placeholder="해당없음"' : 'placeholder="정상가"'} oninput="_K7Engine._onUpd(${idx}, 'orig', this.value)" onkeydown="_K7Engine._onKey(event, ${idx}, 'orig')" onpaste="_K7Engine._onPst(event, ${idx}, 'orig')"></td>
+            <td><input type="number" data-row="${idx}" data-col="sale" value="${item.sale || ''}" placeholder="${isN ? '행사가' : '할인가'}" oninput="_K7Engine._onUpd(${idx}, 'sale', this.value)" onkeydown="_K7Engine._onKey(event, ${idx}, 'sale')" onpaste="_K7Engine._onPst(event, ${idx}, 'sale')"></td>
+            <td><button class="btn-del" onclick="_K7Engine._onDel(${idx})">삭제</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+        document.getElementById('totalItemCount').innerText = _items.length;
+        document.getElementById('totalPageCount').innerText = Math.ceil(_items.length / 8) || 1;
+        _renderPages();
+      }
+
+      function _fmt(num){
+        if (!num && num !== 0) return '0';
+        return Number(num).toLocaleString('ko-KR');
+      }
+
+      function _badge(typ, th){
+        let L = '', R = '', lb = '';
+        if (th === 'mart') {
+          if (typ === '1+1') { L = '🎁'; R = '🎁'; lb = '1+1 득템행사'; }
+          else if (typ === '2+1') { L = '🎉'; R = '🎉'; lb = '2+1 덤앤덤'; }
+          else if (typ === '원가할인') { L = '🔥'; R = '🔥'; lb = '원가 파격할인'; }
+          else { L = '💥'; R = '💥'; lb = '폭풍 특가할인'; }
+        } else if (th === 'lightning') {
+          if (typ === '1+1') { L = '⚡'; R = '⚡'; lb = '1+1 번개찬스'; }
+          else if (typ === '2+1') { L = '🌪️'; R = '🌪️'; lb = '2+1 돌풍행사'; }
+          else if (typ === '원가할인') { L = '⚡'; R = '⚡'; lb = '원가 번개인하'; }
+          else { L = '⚡'; R = '⚡'; lb = '초특가 벼락할인'; }
+        } else if (th === 'king') {
+          if (typ === '1+1') { L = '👑'; R = '👑'; lb = '1+1 황금찬스'; }
+          else if (typ === '2+1') { L = '💎'; R = '💎'; lb = '2+1 보석덤'; }
+          else if (typ === '원가할인') { L = '👑'; R = '👑'; lb = '원가 VIP할인'; }
+          else { L = '💎'; R = '💎'; lb = '대박 특가세일'; }
+        } else if (th === 'party') {
+          if (typ === '1+1') { L = '🎈'; R = '🎈'; lb = '1+1 파티득템'; }
+          else if (typ === '2+1') { L = '🎁'; R = '🎁'; lb = '2+1 덤페스티벌'; }
+          else if (typ === '원가할인') { L = '🎉'; R = '🎉'; lb = '원가 쇼핑찬스'; }
+          else { L = '✨'; R = '✨'; lb = '해피 특가세일'; }
+        } else {
+          if (typ === '1+1') { L = '🚨'; R = '🚨'; lb = '1+1 비상득템'; }
+          else if (typ === '2+1') { L = '📢'; R = '📢'; lb = '2+1 긴급방출'; }
+          else if (typ === '원가할인') { L = '🚨'; R = '🚨'; lb = '원가 긴급처분'; }
+          else { L = '⚠️'; R = '⚠️'; lb = '폭풍 파격세일'; }
+        }
+        return { L, R, lb };
+      }
+
+      function _renderPages(){
+        const pa = document.getElementById('printArea');
+        pa.innerHTML = '';
+        const th = document.getElementById('emojiThemeSelect') ? document.getElementById('emojiThemeSelect').value : 'mart';
+        const st = document.getElementById('badgeStyleSelect') ? document.getElementById('badgeStyleSelect').value : 'pop';
+        const ps = 8;
+        const tp = Math.ceil(_items.length / ps) || 1;
+
+        for (let p = 0; p < tp; p++) {
+          const pg = document.createElement('div');
+          pg.className = 'page-a4';
+          const sidx = p * ps;
+          const sub = _items.slice(sidx, sidx + ps);
+
+          for (let i = 0; i < 8; i++) {
+            const cd = document.createElement('div');
+            cd.className = 'card';
+            if (i < sub.length) {
+              const it = sub[i];
+              const isN = (it.type === '1+1' || it.type === '2+1');
+              const bg = _badge(it.type, th);
+              let shwO = false;
+              let dspP = it.sale || 0;
+              if (!isN && it.orig && it.sale && (it.orig > it.sale)) {
+                shwO = true;
+              }
+              const cls = `badge-style-${st} ${isN ? 'badge-type-nplusone' : 'badge-type-discount'}`;
+              cd.innerHTML = `
+                <div class="card-badge-wrap">
+                  <div class="card-badge ${cls}">
+                    <span>${bg.L}</span>
+                    <span>${bg.lb}</span>
+                    <span>${bg.R}</span>
+                  </div>
+                </div>
+                <div class="card-name">${it.name || '&nbsp;'}</div>
+                <div class="card-price-wrap">
+                  ${shwO ? `
+                    <div class="card-orig-price">
+                      <span class="orig-label">정상가</span>
+                      <span class="orig-amount">${_fmt(it.orig)}원</span>
+                    </div>
+                  ` : ''}
+                  <div class="card-sale-price">${it.sale ? _fmt(dspP) + '원' : ''}</div>
+                </div>
+              `;
+            } else {
+              cd.style.visibility = 'hidden';
+            }
+            pg.appendChild(cd);
+          }
+          pa.appendChild(pg);
+        }
+      }
+
+      function _focus(r, c){
+        const tg = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+        if (tg && !tg.disabled) {
+          tg.focus();
+          if (tg.select) tg.select();
+        } else if (tg && tg.disabled) {
+          _focus(r, 'sale');
+        }
+      }
+
+      return {
+        init: function(){
+          _loadConfig();
+          _applyFonts();
+          _renderTable();
+        },
+        applyFontSizes: _applyFonts,
+        saveSettings: _saveConfig,
+        renderPages: _renderPages,
+        _onChk: function(i, v){ _items[i].checked = v; },
+        _onTyp: function(i, v){
+          _items[i].type = v;
+          if (v === '1+1' || v === '2+1') _items[i].orig = null;
+          _saveData(); _renderTable();
+        },
+        _onUpd: function(i, k, v){
+          if (k === 'orig' || k === 'sale') {
+            _items[i][k] = v === '' ? null : Number(v);
+          } else {
+            _items[i][k] = v;
+          }
+          _saveData(); _renderPages();
+        },
+        _onDel: function(i){
+          _items.splice(i, 1);
+          _saveData(); _renderTable();
+        },
+        _onKey: function(e, r, c){
+          if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            e.preventDefault();
+            if (r + 1 < _items.length) {
+              _focus(r + 1, c);
+            } else {
+              _K7Engine.addRow();
+              setTimeout(() => _focus(r + 1, c), 10);
+            }
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (r - 1 >= 0) _focus(r - 1, c);
+          }
+        },
+        _onPst: function(e, sr, c){
+          const cd = (e.clipboardData || window.clipboardData).getData('text');
+          if (!cd || !cd.includes('\n')) return;
+          e.preventDefault();
+          const ln = cd.split(/\r\n|\n|\r/).filter(l => l.trim() !== '');
+          const dt = document.getElementById('batchTypeSelect') ? document.getElementById('batchTypeSelect').value : '원가할인';
+          ln.forEach((line, i) => {
+            const tr = sr + i;
+            if (tr >= _items.length) {
+              _items.push({ checked: false, type: dt, name: '', orig: null, sale: null });
+            }
+            const cl = line.split('\t');
+            if (cl.length > 1) {
+              if (cl[0]) _items[tr].name = cl[0].trim();
+              if (cl[1]) _items[tr].orig = isNaN(cl[1].replace(/,/g, '')) ? null : Number(cl[1].replace(/,/g, ''));
+              if (cl[2]) _items[tr].sale = isNaN(cl[2].replace(/,/g, '')) ? null : Number(cl[2].replace(/,/g, ''));
+            } else {
+              const v = line.trim();
+              if (c === 'orig' || c === 'sale') {
+                const num = Number(v.replace(/,/g, ''));
+                _items[tr][c] = isNaN(num) ? null : num;
+              } else {
+                _items[tr][c] = v;
+              }
+            }
+          });
+          _saveData(); _renderTable();
+          _focus(sr + ln.length - 1, c);
+        },
+        toggleSelectAll: function(v){
+          _items.forEach(it => it.checked = v);
+          _renderTable();
+        },
+        applyBatchType: function(isA){
+          const st = document.getElementById('batchTypeSelect').value;
+          let c = 0;
+          _items.forEach(it => {
+            if (isA || it.checked) {
+              it.type = st;
+              if (st === '1+1' || st === '2+1') it.orig = null;
+              c++;
+            }
+          });
+          if (!isA && c === 0) {
+            alert('체크된 상품이 없습니다.');
+            return;
+          }
+          _saveData(); _renderTable();
+        },
+        addRow: function(){
+          const dt = document.getElementById('batchTypeSelect') ? document.getElementById('batchTypeSelect').value : '원가할인';
+          _items.push({ checked: false, type: dt, name: '', orig: null, sale: null });
+          _saveData(); _renderTable();
+        },
+        addBulkRows: function(){
+          const cnt = parseInt(document.getElementById('bulkAddCount').value) || 8;
+          const dt = document.getElementById('batchTypeSelect') ? document.getElementById('batchTypeSelect').value : '원가할인';
+          for (let i = 0; i < cnt; i++) {
+            _items.push({ checked: false, type: dt, name: '', orig: null, sale: null });
+          }
+          _saveData(); _renderTable();
+        },
+        addExactPages: function(pgs){
+          const dt = document.getElementById('batchTypeSelect') ? document.getElementById('batchTypeSelect').value : '원가할인';
+          const cnt = pgs * 8;
+          for (let i = 0; i < cnt; i++) {
+            _items.push({ checked: false, type: dt, name: '', orig: null, sale: null });
+          }
+          _saveData(); _renderTable();
+        },
+        resetToPreset: function(){
+          _items = _getPreset();
+          _saveData();
+          _renderTable();
+        },
+        openPasteModal: function(){
+          document.getElementById('pasteModal').style.display = 'flex';
+          document.getElementById('bulkPasteText').value = '';
+          document.getElementById('bulkPasteText').focus();
+        },
+        closePasteModal: function(){
+          document.getElementById('pasteModal').style.display = 'none';
+        },
+        processBulkPaste: function(){
+          const txt = document.getElementById('bulkPasteText').value.trim();
+          if (!txt) {
+            alert('붙여넣은 내용이 없습니다.');
+            return;
+          }
+          const ovw = document.getElementById('bulkOverwrite').checked;
+          if (ovw) _items = [];
+          const ln = txt.split(/\r\n|\n|\r/).filter(l => l.trim() !== '');
+          const dt = document.getElementById('batchTypeSelect').value;
+
+          ln.forEach(line => {
+            const prt = line.split('\t');
+            if (prt.length >= 3) {
+              const nm = prt[0].trim();
+              const o = Number(prt[1].replace(/[^0-9]/g, '')) || null;
+              const s = Number(prt[2].replace(/[^0-9]/g, '')) || null;
+              _items.push({ checked: false, type: dt, name: nm, orig: o, sale: s });
+            } else if (prt.length === 2) {
+              const nm = prt[0].trim();
+              const s = Number(prt[1].replace(/[^0-9]/g, '')) || null;
+              _items.push({ checked: false, type: dt, name: nm, orig: null, sale: s });
+            } else {
+              _items.push({ checked: false, type: dt, name: prt[0].trim(), orig: null, sale: null });
+            }
+          });
+          _K7Engine.closePasteModal();
+          _saveData();
+          _renderTable();
+        }
+      };
+    })();
+
+    window.onload = function(){
+      _K7Engine.init();
+    };
+  </script>
+</body>
+</html>
